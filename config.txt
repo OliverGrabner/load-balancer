@@ -1,0 +1,10 @@
+queueMin=50
+queueMax=80
+scalingCooldown=5
+newRequestProbability=0.70
+logFile=log.txt
+minRequestTime=4
+maxRequestTime=100
+askUserInput=true
+blockedStart=192.168.0.0
+blockedEnd=192.168.255.255
