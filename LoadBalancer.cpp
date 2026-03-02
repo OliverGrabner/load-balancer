@@ -47,6 +47,7 @@ LoadBalancer::LoadBalancer(int numServers, int maxTime, int queueMin, int queueM
     }
 
     log("LoadBalancer created with " + std::to_string(numServers) + " servers", CYAN);
+    log("LoadBalancer running for " + std::to_string(maxTime) + " Cycles", CYAN);
 
 }
 
