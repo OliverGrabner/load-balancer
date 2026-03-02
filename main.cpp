@@ -1,3 +1,11 @@
+/**
+ * @file main.cpp
+ * @brief Entry point for the load balancer simulation.
+ *
+ * Reads configuration from config.txt, optionally prompts the user for
+ * server count and run time, then creates and runs the LoadBalancer simulation.
+ */
+
 #include "LoadBalancer.h"
 #include <iostream>
 #include <fstream>
@@ -5,6 +13,10 @@
 #include <cstdlib>
 #include <ctime>
 
+/**
+ * @brief Main function that configures and runs the load balancer simulation.
+ * @return 0 on successful completion
+ */
 int main() {
 
     // Config vals to init

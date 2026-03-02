@@ -1,3 +1,8 @@
+/**
+ * @file Request.cpp
+ * @brief Implementation of the Request struct methods.
+ */
+
 #include "Request.h"
 #include <cstdlib>
 

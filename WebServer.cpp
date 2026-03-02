@@ -1,3 +1,8 @@
+/**
+ * @file WebServer.cpp
+ * @brief Implementation of the WebServer class methods.
+ */
+
 #include "WebServer.h"
 
 WebServer::WebServer(int id) {
