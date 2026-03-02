@@ -11,8 +11,9 @@ struct Request {
     char jobType;
 
     Request(std::string ipIn, std::string ipOut, int time, char jobType);
-    static Request createRandomRequest();  // creates a random request
-    static std::string createRandomIP(); // called in createRandomRequest
+    static Request generateRandom(int minTime, int maxTime);
+    static std::string generateRandomIP();
+
 };
 
 #endif

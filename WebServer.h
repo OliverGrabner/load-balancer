@@ -12,7 +12,6 @@ Become Available again
 class WebServer {
     private:
         int id;
-        bool busy;
         Request* currRequest;
         int cyclesRemaining;
 
@@ -20,7 +19,8 @@ class WebServer {
         WebServer(int id);
         ~WebServer();
         int getId();
-        const bool tick(); // return true if Request finisehd  
+        const bool tick(); // return true if Request finisehd 
+        void assignRequest(Request* req);
 };
 
 #endif 
