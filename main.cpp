@@ -19,18 +19,19 @@
  */
 int main() {
 
-    // Config vals to init
-    int queueMin, queueMax, scalingCooldown, minRequestTime, maxRequestTime;
-    double newRequestProb;
-    std::string logFile, blockedStart, blockedEnd;
-    bool askUserInput;
+    // Config vals to init (defaults used if a key is missing from config.txt)
+    int queueMin = 50, queueMax = 80, scalingCooldown = 5;
+    int minRequestTime = 4, maxRequestTime = 100;
+    double newRequestProb = 0.70;
+    std::string logFile = "log.txt", blockedStart, blockedEnd;
+    bool askUserInput = true;
 
     // Read config.txt
     std::ifstream configFile("config.txt");
     std::string line;
 
     while (std::getline(configFile, line)) {
-        int eqPos = line.find('=');
+        size_t eqPos = line.find('=');
         if (eqPos == std::string::npos) continue;
 
         std::string key = line.substr(0, eqPos);

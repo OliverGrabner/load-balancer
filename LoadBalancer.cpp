@@ -52,7 +52,7 @@ LoadBalancer::LoadBalancer(int numServers, int maxTime, int queueMin, int queueM
 }
 
 LoadBalancer::~LoadBalancer() {
-    for (int i = 0; i < servers.size(); i++) delete servers[i];
+    for (size_t i = 0; i < servers.size(); i++) delete servers[i];
     servers.clear();
 
     if (logFile.is_open()) logFile.close();
@@ -73,7 +73,7 @@ unsigned long LoadBalancer::ipToLong(const std::string& ip) {
     unsigned long octet = 0;
     int shift = 24;
 
-    for (int i = 0; i < ip.length(); i++) {
+    for (size_t i = 0; i < ip.length(); i++) {
         if (ip[i] == '.') {
             result |= (octet << shift);
             shift -= 8;
@@ -90,7 +90,7 @@ unsigned long LoadBalancer::ipToLong(const std::string& ip) {
 bool LoadBalancer::isBlockedIP(const std::string& ip) const {
     unsigned long ipNum = ipToLong(ip);
 
-    for (int i = 0; i < firewallRange.size(); i++) {
+    for (size_t i = 0; i < firewallRange.size(); i++) {
         unsigned long start = ipToLong(firewallRange[i].first);
         unsigned long end = ipToLong(firewallRange[i].second);
         if (ipNum >= start && ipNum <= end) {
@@ -142,8 +142,8 @@ void LoadBalancer::generateNewRequest() {
 
 // go through each webserver and tick, if a webserver finishes a request, it becomes available again
 void LoadBalancer::tickAllServers() {
-    for (int i = 0; i < servers.size(); i++) {
-        if (servers[i]->tick()) { // become available 
+    for (size_t i = 0; i < servers.size(); i++) {
+        if (servers[i]->tick()) { // become available
             totalProcessedRequests++;
             availableQueue.push(servers[i]);
             log("[Cycle " + std::to_string(currTime) + "] Server " +
@@ -204,7 +204,7 @@ void LoadBalancer::checkScaling() {
         availableQueue.pop();
 
         // Remove it from the servers vector
-        for (int i = 0; i < servers.size(); i++) {
+        for (size_t i = 0; i < servers.size(); i++) {
             if (servers[i] == server) {
                 servers.erase(servers.begin() + i);
                 break;

@@ -1,0 +1,12 @@
+# build artifacts
+*.o
+loadbalancer
+loadbalancer.exe
+
+# generated docs
+docs/
+
+# course zip / run output
+project3.zip
+log.txt
+*.csv
