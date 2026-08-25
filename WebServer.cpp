@@ -19,7 +19,7 @@ WebServer::~WebServer() {
     }
 }
 
-int WebServer::getId() {
+int WebServer::getId() const noexcept {
     return id;
 }
 

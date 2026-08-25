@@ -8,7 +8,11 @@
 
 static std::mt19937 rng;
 
-Request::Request(std::string ipIn, std::string ipOut, int time, char jobType) {
+char jobTypeChar(JobType jobType) {
+    return jobType == JobType::Processing ? 'P' : 'S';
+}
+
+Request::Request(std::string ipIn, std::string ipOut, int time, JobType jobType) {
     this->ipIn = ipIn;
     this->ipOut = ipOut;
     this->time = time;
@@ -40,6 +44,6 @@ Request Request::generateRandom(int minTime, int maxTime) {
     std::string ipIn = generateRandomIP();
     std::string ipOut = generateRandomIP();
     int time = randomInt(minTime, maxTime);
-    char jobType = (randomInt(0, 1) == 0) ? 'P' : 'S';
+    JobType jobType = (randomInt(0, 1) == 0) ? JobType::Processing : JobType::Streaming;
     return Request(ipIn, ipOut, time, jobType);
 }

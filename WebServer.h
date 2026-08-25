@@ -25,18 +25,22 @@ class WebServer {
          * @brief Constructs a WebServer with the given ID.
          * @param id Unique server identifier
          */
-        WebServer(int id);
+        explicit WebServer(int id);
 
         /**
          * @brief Destructor. Cleans up any assigned request to prevent memory leaks.
          */
         ~WebServer();
 
+        // Not copyable: a copy would double-delete currRequest.
+        WebServer(const WebServer&) = delete;
+        WebServer& operator=(const WebServer&) = delete;
+
         /**
          * @brief Returns the server's unique ID.
          * @return The server ID
          */
-        int getId();
+        int getId() const noexcept;
 
         /**
          * @brief Advances the server by one clock cycle.

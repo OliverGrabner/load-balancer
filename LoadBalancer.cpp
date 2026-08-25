@@ -59,8 +59,8 @@ LoadBalancer::~LoadBalancer() {
 }
 
 // getter functions 
-int LoadBalancer::getQueueSize() const { return requestQueue.size(); } 
-int LoadBalancer::getServerCount() const { return servers.size(); }
+int LoadBalancer::getQueueSize() const noexcept { return requestQueue.size(); }
+int LoadBalancer::getServerCount() const noexcept { return servers.size(); }
 
 // FIREWALL
 void LoadBalancer::addBlockedIP(const std::string& startIP, const std::string& stopIP) {
@@ -165,7 +165,7 @@ void LoadBalancer::assignRequest() {
         server->assignRequest(new Request(req));
         log("[Cycle " + std::to_string(currTime) + "] Assigned request to Server " +
             std::to_string(server->getId()) + " (time: " + std::to_string(req.time) +
-            ", type: " + req.jobType + ")", BLUE);
+            ", type: " + jobTypeChar(req.jobType) + ")", BLUE);
     }
 }
 

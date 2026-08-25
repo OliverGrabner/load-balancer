@@ -9,22 +9,32 @@
 #include <string>
 
 /**
+ * @brief Type of job a request represents.
+ */
+enum class JobType { Processing, Streaming };
+
+/**
+ * @brief Converts a JobType to its single-character log representation ('P' or 'S').
+ */
+char jobTypeChar(JobType jobType);
+
+/**
  * @brief Represents a single network request with source/destination IPs, processing time, and job type.
  */
 struct Request {
     std::string ipIn;   ///< Source IP address of the request
     std::string ipOut;  ///< Destination IP address for the response
     int time;           ///< Processing time in clock cycles
-    char jobType;       ///< Job type: 'P' for processing, 'S' for streaming
+    JobType jobType;     ///< Job type: Processing or Streaming
 
     /**
      * @brief Constructs a Request with the given parameters.
      * @param ipIn Source IP address
      * @param ipOut Destination IP address
      * @param time Processing time in clock cycles
-     * @param jobType Job type character ('P' or 'S')
+     * @param jobType Job type
      */
-    Request(std::string ipIn, std::string ipOut, int time, char jobType);
+    Request(std::string ipIn, std::string ipOut, int time, JobType jobType);
 
     /**
      * @brief Generates a random Request with random IPs and a random processing time.

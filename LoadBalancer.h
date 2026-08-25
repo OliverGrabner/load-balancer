@@ -116,6 +116,10 @@ class LoadBalancer {
          */
         ~LoadBalancer();
 
+        // Not copyable: a copy would double-delete the server pool.
+        LoadBalancer(const LoadBalancer&) = delete;
+        LoadBalancer& operator=(const LoadBalancer&) = delete;
+
         /**
          * @brief Adds a blocked IP address range to the firewall.
          * @param startIP Start of the blocked IP range
@@ -142,13 +146,13 @@ class LoadBalancer {
          * @brief Returns the current number of pending requests in the queue.
          * @return The request queue size
          */
-        int getQueueSize() const;
+        int getQueueSize() const noexcept;
 
         /**
          * @brief Returns the current number of active servers.
          * @return The server count
          */
-        int getServerCount() const;
+        int getServerCount() const noexcept;
 };
 
 #endif
