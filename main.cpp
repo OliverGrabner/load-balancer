@@ -11,7 +11,6 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
-#include <ctime>
 
 /**
  * @brief Main function that configures and runs the load balancer simulation.
@@ -25,6 +24,7 @@ int main() {
     double newRequestProb = 0.70;
     std::string logFile = "log.txt", blockedStart, blockedEnd;
     bool askUserInput = true;
+    unsigned int seed = 42;
 
     // Read config.txt
     std::ifstream configFile("config.txt");
@@ -47,8 +47,11 @@ int main() {
         else if (key == "askUserInput") askUserInput = (value == "true");
         else if (key == "blockedStart") blockedStart = value;
         else if (key == "blockedEnd") blockedEnd = value;
+        else if (key == "seed") seed = (unsigned int)std::stoul(value);
     }
     configFile.close();
+
+    Request::seed(seed);
 
     // Get user input
     int numServers = 10;

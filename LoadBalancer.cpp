@@ -126,7 +126,7 @@ void LoadBalancer::initializeQueue() {
 // methods in cycle 
 
 void LoadBalancer::generateNewRequest() {
-    double roll = (double)rand() / RAND_MAX;
+    double roll = Request::randomDouble();
 
     if (roll < generateRequestProbability) {
         Request req = Request::generateRandom(minRequestTime, maxRequestTime);

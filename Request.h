@@ -39,6 +39,22 @@ struct Request {
      * @return A random IP address (e.g. "192.168.1.42")
      */
     static std::string generateRandomIP();
+
+    /**
+     * @brief Seeds the shared random number generator used by all Request generation.
+     * @param seed Seed value
+     */
+    static void seed(unsigned int seed);
+
+    /**
+     * @brief Draws a uniformly random integer in [min, max].
+     */
+    static int randomInt(int min, int max);
+
+    /**
+     * @brief Draws a uniformly random double in [0, 1).
+     */
+    static double randomDouble();
 };
 
 #endif
