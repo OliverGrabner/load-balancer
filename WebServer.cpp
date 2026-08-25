@@ -4,42 +4,34 @@
  */
 
 #include "WebServer.h"
+#include <utility>
 
 WebServer::WebServer(int id) {
     this->id = id;
-    this->currRequest = nullptr;
     this->cyclesRemaining = -1; // no request
-}
-
-WebServer::~WebServer() {
-    // should NEVER be the case since we only take away from the active pool. but we handle just in case due to mem leaks
-    if (currRequest != nullptr){
-        delete currRequest;
-        currRequest = nullptr;
-    }
 }
 
 int WebServer::getId() const noexcept {
     return id;
 }
 
-const bool WebServer::tick() {
-    if (currRequest == nullptr) {
-        return false;
+std::optional<Request> WebServer::tick() {
+    if (!currRequest.has_value()) {
+        return std::nullopt;
     }
 
     cyclesRemaining--;
 
     if (cyclesRemaining <= 0) {
-        delete currRequest;
-        currRequest = nullptr;
-        return true;
+        Request finished = std::move(*currRequest);
+        currRequest.reset();
+        return finished;
     }
 
-    return false;
+    return std::nullopt;
 }
 
-void WebServer::assignRequest(Request* req) {
-    currRequest = req;
-    cyclesRemaining = req->time;
+void WebServer::assignRequest(Request req) {
+    cyclesRemaining = req.time;
+    currRequest = std::move(req);
 }

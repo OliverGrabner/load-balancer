@@ -7,6 +7,7 @@
 #define WEBSERVER_H
 
 #include "Request.h"
+#include <optional>
 
 /**
  * @brief Simulates a web server that receives and processes requests from the load balancer.
@@ -16,9 +17,9 @@
  */
 class WebServer {
     private:
-        int id;                 ///< Unique identifier for this server
-        Request* currRequest;   ///< Pointer to the currently assigned request, or nullptr if idle
-        int cyclesRemaining;    ///< Clock cycles remaining to finish the current request
+        int id;                              ///< Unique identifier for this server
+        std::optional<Request> currRequest;  ///< The request being processed, or empty if idle
+        int cyclesRemaining;                 ///< Clock cycles remaining to finish the current request
 
     public:
         /**
@@ -27,12 +28,9 @@ class WebServer {
          */
         explicit WebServer(int id);
 
-        /**
-         * @brief Destructor. Cleans up any assigned request to prevent memory leaks.
-         */
-        ~WebServer();
+        ~WebServer() = default;
 
-        // Not copyable: a copy would double-delete currRequest.
+        // Not copyable: each WebServer is a uniquely-identified pool member.
         WebServer(const WebServer&) = delete;
         WebServer& operator=(const WebServer&) = delete;
 
@@ -44,15 +42,15 @@ class WebServer {
 
         /**
          * @brief Advances the server by one clock cycle.
-         * @return true if the server just finished processing its request, false otherwise
+         * @return The completed Request if one just finished this cycle, std::nullopt otherwise.
          */
-        const bool tick();
+        std::optional<Request> tick();
 
         /**
          * @brief Assigns a new request to this server for processing.
-         * @param req Pointer to the Request to process (takes ownership)
+         * @param req The Request to process
          */
-        void assignRequest(Request* req);
+        void assignRequest(Request req);
 };
 
 #endif

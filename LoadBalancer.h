@@ -50,6 +50,9 @@ class LoadBalancer {
         int serversRemoved;         ///< Number of servers removed during simulation
         int startingQueueSize;      ///< Queue size after initial population
 
+        std::vector<int> waitCycles;    ///< Wait time (assignment - arrival) for each completed request
+        std::vector<int> sojournCycles; ///< Total time in system (completion - arrival) for each completed request
+
         std::ofstream logFile; ///< Output stream for the log file
 
         /**
@@ -65,6 +68,14 @@ class LoadBalancer {
          * @return The numeric representation of the IP address
          */
         static unsigned long ipToLong(const std::string& ip);
+
+        /**
+         * @brief Returns the p-th percentile (nearest-rank) of a pre-sorted vector of values.
+         * @param sortedValues Values sorted in ascending order
+         * @param p Percentile in [0, 100]
+         * @return The value at that percentile, or 0 if the vector is empty
+         */
+        static int percentile(const std::vector<int>& sortedValues, double p);
 
         /**
          * @brief Checks queue thresholds and adds or removes servers as needed.

@@ -6,6 +6,7 @@
 #include "LoadBalancer.h"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 // COLORS :P
 const std::string RED = "\033[31m";
@@ -87,6 +88,15 @@ unsigned long LoadBalancer::ipToLong(const std::string& ip) {
     return result;
 }
 
+int LoadBalancer::percentile(const std::vector<int>& sortedValues, double p) {
+    if (sortedValues.empty()) return 0;
+
+    size_t idx = (size_t)(p / 100.0 * sortedValues.size());
+    if (idx >= sortedValues.size()) idx = sortedValues.size() - 1;
+
+    return sortedValues[idx];
+}
+
 bool LoadBalancer::isBlockedIP(const std::string& ip) const {
     unsigned long ipNum = ipToLong(ip);
 
@@ -108,6 +118,7 @@ void LoadBalancer::initializeQueue() {
 
     for (int i = 0; i < count; i++) {
         Request req = Request::generateRandom(minRequestTime, maxRequestTime);
+        req.arrivalCycle = currTime;
 
         if (!isBlockedIP(req.ipIn)) {
             requestQueue.push(req);
@@ -130,6 +141,7 @@ void LoadBalancer::generateNewRequest() {
 
     if (roll < generateRequestProbability) {
         Request req = Request::generateRandom(minRequestTime, maxRequestTime);
+        req.arrivalCycle = currTime;
 
         if (isBlockedIP(req.ipIn)) {
             totalRejectedRequests++;
@@ -143,8 +155,11 @@ void LoadBalancer::generateNewRequest() {
 // go through each webserver and tick, if a webserver finishes a request, it becomes available again
 void LoadBalancer::tickAllServers() {
     for (size_t i = 0; i < servers.size(); i++) {
-        if (servers[i]->tick()) { // become available
+        if (auto finished = servers[i]->tick()) { // returns the completed request, if any
             totalProcessedRequests++;
+            waitCycles.push_back(finished->startCycle - finished->arrivalCycle);
+            sojournCycles.push_back(currTime - finished->arrivalCycle);
+
             availableQueue.push(servers[i]);
             log("[Cycle " + std::to_string(currTime) + "] Server " +
                 std::to_string(servers[i]->getId()) + " finished a request", GREEN);
@@ -161,8 +176,9 @@ void LoadBalancer::assignRequest() {
 
         Request req = requestQueue.front();
         requestQueue.pop();
+        req.startCycle = currTime;
 
-        server->assignRequest(new Request(req));
+        server->assignRequest(req);
         log("[Cycle " + std::to_string(currTime) + "] Assigned request to Server " +
             std::to_string(server->getId()) + " (time: " + std::to_string(req.time) +
             ", type: " + jobTypeChar(req.jobType) + ")", BLUE);
@@ -278,5 +294,22 @@ void LoadBalancer::printSummary() {
     log("Final server count: " + std::to_string(servers.size()));
     log("Busy servers: " + std::to_string(busyCount));
     log("Idle servers: " + std::to_string(idleCount));
+
+    std::vector<int> sortedWait = waitCycles;
+    std::sort(sortedWait.begin(), sortedWait.end());
+    std::vector<int> sortedSojourn = sojournCycles;
+    std::sort(sortedSojourn.begin(), sortedSojourn.end());
+
+    log("");
+    log("Wait time (cycles, queue to assignment) over " + std::to_string(sortedWait.size()) + " completed requests:");
+    log("  p50: " + std::to_string(percentile(sortedWait, 50)) +
+        "  p95: " + std::to_string(percentile(sortedWait, 95)) +
+        "  p99: " + std::to_string(percentile(sortedWait, 99)) +
+        "  max: " + std::to_string(percentile(sortedWait, 100)));
+    log("Sojourn time (cycles, arrival to completion) over " + std::to_string(sortedSojourn.size()) + " completed requests:");
+    log("  p50: " + std::to_string(percentile(sortedSojourn, 50)) +
+        "  p95: " + std::to_string(percentile(sortedSojourn, 95)) +
+        "  p99: " + std::to_string(percentile(sortedSojourn, 99)) +
+        "  max: " + std::to_string(percentile(sortedSojourn, 100)));
     log("=================================================");
 }

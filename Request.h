@@ -26,6 +26,8 @@ struct Request {
     std::string ipOut;  ///< Destination IP address for the response
     int time;           ///< Processing time in clock cycles
     JobType jobType;     ///< Job type: Processing or Streaming
+    int arrivalCycle = -1; ///< Simulation cycle the request was generated, or -1 if unset
+    int startCycle = -1;   ///< Simulation cycle a server began processing it, or -1 if unset
 
     /**
      * @brief Constructs a Request with the given parameters.
