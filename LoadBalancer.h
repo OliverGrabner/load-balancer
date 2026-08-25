@@ -53,6 +53,11 @@ class LoadBalancer {
         std::vector<int> waitCycles;    ///< Wait time (assignment - arrival) for each completed request
         std::vector<int> sojournCycles; ///< Total time in system (completion - arrival) for each completed request
 
+        bool enableScaling;        ///< If false, checkScaling() is a no-op (fixed fleet size)
+        int initialQueueMultiplier; ///< initializeQueue() seeds servers * this many requests
+        int warmupCycles;          ///< Completions before this cycle are excluded from latency stats
+        bool quiet;                ///< If true, log() is a no-op (suppresses file and console output)
+
         std::ofstream logFile; ///< Output stream for the log file
 
         /**
@@ -116,11 +121,17 @@ class LoadBalancer {
          * @param minRequestTime Minimum processing time for requests
          * @param maxRequestTime Maximum processing time for requests
          * @param logFileName Path to the output log file
+         * @param enableScaling If false, the fleet size stays fixed at numServers
+         * @param initialQueueMultiplier initializeQueue() seeds numServers * this many requests
+         * @param warmupCycles Completions before this cycle are excluded from latency stats
+         * @param quiet If true, suppresses file and console log output
          */
         LoadBalancer(int numServers, int maxTime, int queueMin, int queueMax,
                     int scalingCooldown, double newRequestProb,
                     int minRequestTime, int maxRequestTime,
-                    const std::string& logFileName);
+                    const std::string& logFileName,
+                    bool enableScaling = true, int initialQueueMultiplier = 100,
+                    int warmupCycles = 0, bool quiet = false);
 
         /**
          * @brief Destructor. Frees all server instances and closes the log file.
@@ -164,6 +175,18 @@ class LoadBalancer {
          * @return The server count
          */
         int getServerCount() const noexcept;
+
+        /**
+         * @brief Returns the p-th percentile of queue wait time (assignment - arrival), in cycles.
+         * @param p Percentile in [0, 100]
+         */
+        int getWaitPercentile(double p) const;
+
+        /**
+         * @brief Returns the p-th percentile of sojourn time (completion - arrival), in cycles.
+         * @param p Percentile in [0, 100]
+         */
+        int getSojournPercentile(double p) const;
 };
 
 #endif

@@ -9,4 +9,5 @@ docs/
 # course zip / run output
 project3.zip
 log.txt
+sweep_log.txt
 *.csv

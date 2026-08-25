@@ -20,7 +20,9 @@ const std::string RESET = "\033[0m";
 LoadBalancer::LoadBalancer(int numServers, int maxTime, int queueMin, int queueMax,
                            int scalingCooldown, double newRequestProb,
                            int minRequestTime, int maxRequestTime,
-                           const std::string& logFileName) {
+                           const std::string& logFileName,
+                           bool enableScaling, int initialQueueMultiplier,
+                           int warmupCycles, bool quiet) {
 
     this->currTime = 0;
     this->maxTime = maxTime;
@@ -37,6 +39,10 @@ LoadBalancer::LoadBalancer(int numServers, int maxTime, int queueMin, int queueM
     this->serversAdded = 0;
     this->serversRemoved = 0;
     this->startingQueueSize = 0;
+    this->enableScaling = enableScaling;
+    this->initialQueueMultiplier = initialQueueMultiplier;
+    this->warmupCycles = warmupCycles;
+    this->quiet = quiet;
 
     logFile.open(logFileName);
     
@@ -59,9 +65,21 @@ LoadBalancer::~LoadBalancer() {
     if (logFile.is_open()) logFile.close();
 }
 
-// getter functions 
+// getter functions
 int LoadBalancer::getQueueSize() const noexcept { return requestQueue.size(); }
 int LoadBalancer::getServerCount() const noexcept { return servers.size(); }
+
+int LoadBalancer::getWaitPercentile(double p) const {
+    std::vector<int> sorted = waitCycles;
+    std::sort(sorted.begin(), sorted.end());
+    return percentile(sorted, p);
+}
+
+int LoadBalancer::getSojournPercentile(double p) const {
+    std::vector<int> sorted = sojournCycles;
+    std::sort(sorted.begin(), sorted.end());
+    return percentile(sorted, p);
+}
 
 // FIREWALL
 void LoadBalancer::addBlockedIP(const std::string& startIP, const std::string& stopIP) {
@@ -114,7 +132,7 @@ bool LoadBalancer::isBlockedIP(const std::string& ip) const {
 // Queue 
 
 void LoadBalancer::initializeQueue() {
-    int count = servers.size() * 100;
+    int count = servers.size() * initialQueueMultiplier;
 
     for (int i = 0; i < count; i++) {
         Request req = Request::generateRandom(minRequestTime, maxRequestTime);
@@ -157,8 +175,10 @@ void LoadBalancer::tickAllServers() {
     for (size_t i = 0; i < servers.size(); i++) {
         if (auto finished = servers[i]->tick()) { // returns the completed request, if any
             totalProcessedRequests++;
-            waitCycles.push_back(finished->startCycle - finished->arrivalCycle);
-            sojournCycles.push_back(currTime - finished->arrivalCycle);
+            if (currTime >= warmupCycles) {
+                waitCycles.push_back(finished->startCycle - finished->arrivalCycle);
+                sojournCycles.push_back(currTime - finished->arrivalCycle);
+            }
 
             availableQueue.push(servers[i]);
             log("[Cycle " + std::to_string(currTime) + "] Server " +
@@ -187,7 +207,9 @@ void LoadBalancer::assignRequest() {
 
 // if queu size goes above what it should be , add a server, wait n clock cycles
 void LoadBalancer::checkScaling() {
-    // tick down 
+    if (!enableScaling) return;
+
+    // tick down
     if (cooldownRemaining > 0) {
         cooldownRemaining--;
         return;
@@ -240,6 +262,8 @@ void LoadBalancer::checkScaling() {
 
 // log to logfile and print in terminal message
 void LoadBalancer::log(const std::string& message, const std::string& color) {
+    if (quiet) return;
+
     if (logFile.is_open()) {
         logFile << message << std::endl;
     }
@@ -295,21 +319,16 @@ void LoadBalancer::printSummary() {
     log("Busy servers: " + std::to_string(busyCount));
     log("Idle servers: " + std::to_string(idleCount));
 
-    std::vector<int> sortedWait = waitCycles;
-    std::sort(sortedWait.begin(), sortedWait.end());
-    std::vector<int> sortedSojourn = sojournCycles;
-    std::sort(sortedSojourn.begin(), sortedSojourn.end());
-
     log("");
-    log("Wait time (cycles, queue to assignment) over " + std::to_string(sortedWait.size()) + " completed requests:");
-    log("  p50: " + std::to_string(percentile(sortedWait, 50)) +
-        "  p95: " + std::to_string(percentile(sortedWait, 95)) +
-        "  p99: " + std::to_string(percentile(sortedWait, 99)) +
-        "  max: " + std::to_string(percentile(sortedWait, 100)));
-    log("Sojourn time (cycles, arrival to completion) over " + std::to_string(sortedSojourn.size()) + " completed requests:");
-    log("  p50: " + std::to_string(percentile(sortedSojourn, 50)) +
-        "  p95: " + std::to_string(percentile(sortedSojourn, 95)) +
-        "  p99: " + std::to_string(percentile(sortedSojourn, 99)) +
-        "  max: " + std::to_string(percentile(sortedSojourn, 100)));
+    log("Wait time (cycles, queue to assignment) over " + std::to_string(waitCycles.size()) + " completed requests:");
+    log("  p50: " + std::to_string(getWaitPercentile(50)) +
+        "  p95: " + std::to_string(getWaitPercentile(95)) +
+        "  p99: " + std::to_string(getWaitPercentile(99)) +
+        "  max: " + std::to_string(getWaitPercentile(100)));
+    log("Sojourn time (cycles, arrival to completion) over " + std::to_string(sojournCycles.size()) + " completed requests:");
+    log("  p50: " + std::to_string(getSojournPercentile(50)) +
+        "  p95: " + std::to_string(getSojournPercentile(95)) +
+        "  p99: " + std::to_string(getSojournPercentile(99)) +
+        "  max: " + std::to_string(getSojournPercentile(100)));
     log("=================================================");
 }
