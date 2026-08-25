@@ -28,7 +28,7 @@ class LoadBalancer {
         std::queue<Request> requestQueue;       ///< FIFO queue of pending requests
         std::queue<WebServer*> availableQueue;  ///< Queue of idle servers ready for assignment
         std::vector<WebServer*> servers;        ///< All active server instances
-        std::vector<std::pair<std::string, std::string>> firewallRange; ///< Blocked IP ranges (start, end)
+        std::vector<std::pair<uint32_t, uint32_t>> firewallRange; ///< Blocked IP ranges (start, end), precomputed at insert time
 
         int currTime;           ///< Current simulation clock cycle
         int maxTime;            ///< Total number of clock cycles to simulate
@@ -65,14 +65,7 @@ class LoadBalancer {
          * @param ip The IP address to check
          * @return true if the IP is blocked, false otherwise
          */
-        bool isBlockedIP(const std::string& ip) const;
-
-        /**
-         * @brief Converts a dotted-decimal IP address string to an unsigned long.
-         * @param ip The IP address string (e.g. "192.168.1.1")
-         * @return The numeric representation of the IP address
-         */
-        static unsigned long ipToLong(const std::string& ip);
+        bool isBlockedIP(uint32_t ip) const;
 
         /**
          * @brief Returns the p-th percentile (nearest-rank) of a pre-sorted vector of values.

@@ -83,27 +83,8 @@ int LoadBalancer::getSojournPercentile(double p) const {
 
 // FIREWALL
 void LoadBalancer::addBlockedIP(const std::string& startIP, const std::string& stopIP) {
-    firewallRange.push_back(std::make_pair(startIP, stopIP));
+    firewallRange.push_back(std::make_pair(ipToLong(startIP), ipToLong(stopIP)));
     log("Blocked IP range: " + startIP + " - " + stopIP, RED);
-}
-
-unsigned long LoadBalancer::ipToLong(const std::string& ip) {
-    unsigned long result = 0;
-    unsigned long octet = 0;
-    int shift = 24;
-
-    for (size_t i = 0; i < ip.length(); i++) {
-        if (ip[i] == '.') {
-            result |= (octet << shift);
-            shift -= 8;
-            octet = 0;
-        } else {
-            octet = octet * 10 + (ip[i] - '0');
-        }
-    }
-    result |= (octet << shift);
-
-    return result;
 }
 
 int LoadBalancer::percentile(const std::vector<int>& sortedValues, double p) {
@@ -115,17 +96,13 @@ int LoadBalancer::percentile(const std::vector<int>& sortedValues, double p) {
     return sortedValues[idx];
 }
 
-bool LoadBalancer::isBlockedIP(const std::string& ip) const {
-    unsigned long ipNum = ipToLong(ip);
-
+bool LoadBalancer::isBlockedIP(uint32_t ip) const {
     for (size_t i = 0; i < firewallRange.size(); i++) {
-        unsigned long start = ipToLong(firewallRange[i].first);
-        unsigned long end = ipToLong(firewallRange[i].second);
-        if (ipNum >= start && ipNum <= end) {
+        if (ip >= firewallRange[i].first && ip <= firewallRange[i].second) {
             return true;
         }
     }
-    // found no blocks, so it works 
+    // found no blocks, so it works
     return false;
 }
 
@@ -140,10 +117,10 @@ void LoadBalancer::initializeQueue() {
 
         if (!isBlockedIP(req.ipIn)) {
             requestQueue.push(req);
-            log("Request #" + std::to_string(i) + ": Added (" + req.ipIn + ")", CYAN);
-        } else { // reject and dont put in 
+            log("Request #" + std::to_string(i) + ": Added (" + ipToString(req.ipIn) + ")", CYAN);
+        } else { // reject and dont put in
             totalRejectedRequests++;
-            log("Request #" + std::to_string(i) + ": REJECTED because of bad IP (" + req.ipIn + ")", RED);
+            log("Request #" + std::to_string(i) + ": REJECTED because of bad IP (" + ipToString(req.ipIn) + ")", RED);
         }
     }
 
@@ -163,7 +140,7 @@ void LoadBalancer::generateNewRequest() {
 
         if (isBlockedIP(req.ipIn)) {
             totalRejectedRequests++;
-            log("[Cycle " + std::to_string(currTime) + "] BLOCKED request from " + req.ipIn, RED);
+            log("[Cycle " + std::to_string(currTime) + "] BLOCKED request from " + ipToString(req.ipIn), RED);
         } else {
             requestQueue.push(req);
         }

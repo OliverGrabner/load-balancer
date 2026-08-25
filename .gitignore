@@ -10,4 +10,5 @@ docs/
 project3.zip
 log.txt
 sweep_log.txt
+bench_log.txt
 *.csv

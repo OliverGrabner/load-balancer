@@ -11,6 +11,9 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <chrono>
+#include <algorithm>
+#include <vector>
 
 /**
  * @brief Runs a fixed-fleet utilization sweep: for each target rho (server
@@ -46,6 +49,42 @@ void runUtilizationSweep(int minRequestTime, int maxRequestTime) {
                    << lb.getSojournPercentile(99) << "\t"
                    << lb.getSojournPercentile(100) << "\n";
     }
+}
+
+/**
+ * @brief Times LoadBalancer::run() over several trials on a fixed seed and
+ * reports the median wall-clock time. Logging is disabled so the timing
+ * reflects request-handling cost, not console/file I/O.
+ */
+void runBenchmark(int minRequestTime, int maxRequestTime,
+                   const std::string& blockedStart, const std::string& blockedEnd) {
+    const int numServers = 45;
+    const int totalCycles = 100000;
+    const int trials = 5;
+
+    std::vector<double> elapsedMs;
+
+    for (int t = 0; t < trials; t++) {
+        Request::seed(42);
+        LoadBalancer lb(numServers, totalCycles, 50, 80, 5, 0.70,
+                        minRequestTime, maxRequestTime, "bench_log.txt",
+                        /*enableScaling*/true, /*initialQueueMultiplier*/100,
+                        /*warmupCycles*/0, /*quiet*/true);
+        lb.addBlockedIP(blockedStart, blockedEnd);
+        lb.initializeQueue();
+
+        auto start = std::chrono::steady_clock::now();
+        lb.run();
+        auto end = std::chrono::steady_clock::now();
+
+        elapsedMs.push_back(std::chrono::duration<double, std::milli>(end - start).count());
+    }
+
+    std::sort(elapsedMs.begin(), elapsedMs.end());
+
+    std::cout << "trials (ms):";
+    for (double ms : elapsedMs) std::cout << " " << ms;
+    std::cout << "\nmedian: " << elapsedMs[elapsedMs.size() / 2] << " ms\n";
 }
 
 /**
@@ -91,6 +130,11 @@ int main(int argc, char* argv[]) {
 
     if (argc > 1 && std::string(argv[1]) == "--sweep") {
         runUtilizationSweep(minRequestTime, maxRequestTime);
+        return 0;
+    }
+
+    if (argc > 1 && std::string(argv[1]) == "--bench") {
+        runBenchmark(minRequestTime, maxRequestTime, "192.168.0.0", "200.191.0.0");
         return 0;
     }
 
